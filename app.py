@@ -94,7 +94,8 @@ def run_lollipop():
         '--filters', f'{local_dir}/filters_badmut.yaml',
         '--seed=42',
         '--n-cores=1',
-        f'--location={location}'
+        f'--location={location}',
+        '--output', f'{local_dir}/deconvolved.csv'
     ]
     subprocess.run(command, check=True)
 
