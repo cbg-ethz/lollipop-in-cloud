@@ -28,10 +28,12 @@ app = Flask(__name__)
 
 def download_from_s3(bucket_name, s3_key, local_path):
     try:
-        s3.download_file(bucket_name, s3_key, local_path)
-        print(f"Downloaded {s3_key} from {bucket_name} to {local_path}")
+        response = s3.get_object(Bucket=bucket_name, Key=s3_key)
+        with open(local_path, 'wb') as file:
+            file.write(response['Body'].read())
+        logging.info(f"Downloaded {s3_key} from {bucket_name} to {local_path}")
     except Exception as e:
-        print(f"Error downloading {s3_key} from {bucket_name}: {e}")
+        logging.error(f"Error downloading {s3_key} from {bucket_name}: {e}")
 
 def generate_plot_from_csv(csv_path):
     # Read the CSV file into a DataFrame
