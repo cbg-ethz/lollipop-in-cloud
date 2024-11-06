@@ -64,6 +64,9 @@ def run_lollipop():
     with open(yaml_path, 'w') as file:
         file.write(yaml_data)
 
+    # printt the yaml data to console
+    print(yaml_data)
+
     # Define S3 bucket and keys
     bucket_name = 'vpipe-output'
     s3_files = {
@@ -73,9 +76,6 @@ def run_lollipop():
         'filters_badmut.yaml': 'filters_badmut.yaml',
         'ww_locations.tsv': 'ww_locations.tsv'
     }
-
-    # Create local directory if it doesn't exist
-    os.makedirs(local_dir, exist_ok=True)
 
     # Download files from S3
     for local_file, s3_key in s3_files.items():
