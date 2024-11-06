@@ -64,9 +64,6 @@ def run_lollipop():
     with open(yaml_path, 'w') as file:
         file.write(yaml_data)
 
-    # printt the yaml data to console
-    print(yaml_data)
-
     # Define S3 bucket and keys
     bucket_name = 'vpipe-output'
     s3_files = {
@@ -76,21 +73,21 @@ def run_lollipop():
         'filters_badmut.yaml': 'filters_badmut.yaml',
         'ww_locations.tsv': 'ww_locations.tsv'
     }
-
     # Download files from S3
     for local_file, s3_key in s3_files.items():
         local_path = os.path.join(local_dir, local_file)
+        print(f"Downloading {s3_key} to {local_path}...")
         download_from_s3(bucket_name, s3_key, local_path)
+        print(f"Downloaded {s3_key} to {local_path}")
 
     # Run lollipop deconvolute command
-    ldata = local_dir
     location = data.get('location', '')
     command = [
-        'lollipop', 'deconvolute', f'{ldata}/tallymut.tsv.zst',
-        '--variants-config', f'{ldata}/variant_config.yaml',
+        'lollipop', 'deconvolute', f'{local_dir}/tallymut.tsv.zst',
+        '--variants-config', f'{local_dir}/variant_config.yaml',
         '--variants-dates', yaml_path,
-        '--deconv-config', f'{ldata}/deconv_bootstrap_cowwid.yaml',
-        '--filters', f'{ldata}/filters_badmut.yaml',
+        '--deconv-config', f'{local_dir}/deconv_bootstrap_cowwid.yaml',
+        '--filters', f'{local_dir}/filters_badmut.yaml',
         '--seed=42',
         '--n-cores=1',
         f'--location={location}'
