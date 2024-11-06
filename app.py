@@ -9,6 +9,7 @@ import pandas as pd
 import boto3
 import uuid
 import logging
+import seaborn as sns
 
 # Load environment variables from .env file
 load_dotenv()
@@ -33,17 +34,39 @@ def download_from_s3(bucket_name, s3_key, local_path):
     except Exception as e:
         logging.error(f"Error downloading {s3_key} from {bucket_name}: {e}")
 
-def generate_plot_from_csv(csv_path):
+def generate_plot_from_csv(csv_path, location=''):
     # Read the CSV file into a DataFrame
-    df = pd.read_csv(csv_path)
+    data = pd.read_csv(csv_path, sep='\t')
+    data['date'] = pd.to_datetime(data['date'])
 
-    # Create the plot
-    plt.figure(figsize=(10, 6))
+    # Set the style
+    sns.set_theme(style="whitegrid")
 
-    plt.plot(df['date'], df['value'])  # Adjust columns as needed
+    # Sort the data by date
+    data = data.sort_values(by='date')
+
+    # Create the line plot with error bands
+    plt.figure(figsize=(14, 7))
+    sns.lineplot(data=data, x='date', y='proportion', hue='variant', errorbar=None)
+
+    # Fill the area between the lower and upper values for each variant
+    for variant in data['variant'].unique():
+        subset = data[data['variant'] == variant]
+        plt.fill_between(subset['date'], subset['proportionLower'], subset['proportionUpper'], alpha=0.3)
+
+    # Move the legend outside of the plot
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Variant')
+
+    # x-axis from 0 to 1 with sensible ticks
+    plt.ylim(0, 1)
+
     plt.xlabel('Date')
-    plt.ylabel('Value')
-    plt.title('Deconvolved Data Plot')
+    plt.ylabel('Proportion')
+
+    # Add a title
+    plt.title('Proportion of Variants Over Time')
+    # add subtitle the loaction variable
+    plt.suptitle(f"Location: {location}")
 
     # Save the plot to a BytesIO object
     img = io.BytesIO()
@@ -95,13 +118,13 @@ def run_lollipop():
         '--seed=42',
         '--n-cores=1',
         f'--location={location}',
-        '--output', f'{local_dir}/deconvolved.csv'
+        '--output', f'{local_dir}/deconvolved.tsv'
     ]
     subprocess.run(command, check=True)
 
     # Generate the plot from the output file
-    output_file_path = os.path.join(local_dir, 'deconvolved.csv')
-    plot_url = generate_plot_from_csv(output_file_path)
+    output_file_path = os.path.join(local_dir, 'deconvolved.tsv')
+    plot_url = generate_plot_from_csv(output_file_path, location)
 
     return jsonify({'plot_url': f'data:image/png;base64,{plot_url}'})
 
