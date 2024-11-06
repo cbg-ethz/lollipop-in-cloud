@@ -42,7 +42,7 @@ command = [
     '--deconv-config', f'{ldata}/deconv_bootstrap_cowwid.yaml',
     '--filters', f'{ldata}/filters_badmut.yaml',
     '--seed=42',
-    '--n-cores=3'
+    '--n-cores=1'
 ]
 subprocess.run(command, check=True)
 
