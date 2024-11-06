@@ -71,7 +71,7 @@ def run_lollipop():
     # Define S3 bucket and keys
     bucket_name = 'vpipe-output'
     s3_files = {
-        'tallymut.tsv': 'tallymut.tsv.zst',
+        'tallymut.tsv.zst': 'tallymut.tsv.zst',
         'variant_config.yaml': 'variant_config.yaml',
         'deconv_bootstrap_cowwid.yaml': 'deconv_bootstrap_cowwid.yaml',
         'filters_badmut.yaml': 'filters_badmut.yaml',
