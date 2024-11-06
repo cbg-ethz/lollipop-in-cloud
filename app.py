@@ -8,9 +8,13 @@ import subprocess
 import pandas as pd
 import boto3
 import uuid
+import logging
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 # Create an S3 client
 s3 = boto3.client(
@@ -76,9 +80,9 @@ def run_lollipop():
     # Download files from S3
     for local_file, s3_key in s3_files.items():
         local_path = os.path.join(local_dir, local_file)
-        print(f"Downloading {s3_key} to {local_path}...")
+        logging.info(f"Downloading {s3_key} to {local_path}...")
         download_from_s3(bucket_name, s3_key, local_path)
-        print(f"Downloaded {s3_key} to {local_path}")
+        logging.info(f"Downloaded {s3_key} to {local_path}")
 
     # Run lollipop deconvolute command
     location = data.get('location', '')
