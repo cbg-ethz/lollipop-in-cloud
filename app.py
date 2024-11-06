@@ -54,8 +54,13 @@ def run_lollipop():
     data = request.json
     yaml_data = data['yaml']
 
+    # Create a unique directory for this request
+    request_id = str(uuid.uuid4())
+    local_dir = f'/tmp/lollipop_run_{request_id}'
+    os.makedirs(local_dir, exist_ok=True)
+
     # Save the YAML data to a file
-    yaml_path = '/tmp/var_dates.yaml'
+    yaml_path = os.path.join(local_dir,'var_dates.yaml')
     with open(yaml_path, 'w') as file:
         file.write(yaml_data)
 
@@ -69,12 +74,6 @@ def run_lollipop():
         'ww_locations.tsv': 'ww_locations.tsv'
     }
 
-    # Create a unique directory for this request
-    request_id = str(uuid.uuid4())
-    local_dir = f'/tmp/lollipop_run_{request_id}'
-    os.makedirs(local_dir, exist_ok=True)
-
-
     # Create local directory if it doesn't exist
     os.makedirs(local_dir, exist_ok=True)
 
@@ -87,7 +86,7 @@ def run_lollipop():
     ldata = local_dir
     location = data.get('location', '')
     command = [
-        'lollipop', 'deconvolute', f'{ldata}/tallymut.tsv',
+        'lollipop', 'deconvolute', f'{ldata}/tallymut.tsv.zst',
         '--variants-config', f'{ldata}/variant_config.yaml',
         '--variants-dates', yaml_path,
         '--deconv-config', f'{ldata}/deconv_bootstrap_cowwid.yaml',
