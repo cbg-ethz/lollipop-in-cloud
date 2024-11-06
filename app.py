@@ -12,11 +12,22 @@ import uuid
 # Load environment variables from .env file
 load_dotenv()
 
+# Create an S3 client
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    region_name=os.getenv('AWS_DEFAULT_REGION')
+)
+
 app = Flask(__name__)
 
 def download_from_s3(bucket_name, s3_key, local_path):
-    s3 = boto3.client('s3')
-    s3.download_file(bucket_name, s3_key, local_path)
+    try:
+        s3.download_file(bucket_name, s3_key, local_path)
+        print(f"Downloaded {s3_key} from {bucket_name} to {local_path}")
+    except Exception as e:
+        print(f"Error downloading {s3_key} from {bucket_name}: {e}")
 
 def generate_plot_from_csv(csv_path):
     # Read the CSV file into a DataFrame
