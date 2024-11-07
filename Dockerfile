@@ -5,7 +5,6 @@ WORKDIR /app
 
 # Copy additional project files
 COPY requirements.txt ./
-COPY run_lollipop.py ./
 COPY app.py ./
 COPY .env ./
 
