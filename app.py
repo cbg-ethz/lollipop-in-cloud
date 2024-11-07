@@ -116,6 +116,9 @@ def run_lollipop():
         else:
             logging.info(f"File exists: {local_path}")
 
+    # get the location to deconvolute for 
+    location = data.get('location', '')
+
     # Run lollipop deconvolute command
     command = [
         'lollipop', 'deconvolute', f'{local_dir}/tallymut.tsv.zst',
@@ -124,6 +127,8 @@ def run_lollipop():
         '--deconv-config', f'{local_dir}/deconv_bootstrap_cowwid.yaml',
         '--filters', f'{local_dir}/filters_badmut.yaml',
         '--seed=42',
+        f'--location={location}',
+        '--output', f'{local_dir}/deconvolved.tsv',
         '--n-cores=1'
     ]
     try:
@@ -133,7 +138,7 @@ def run_lollipop():
         return jsonify({'error': 'Error running lollipop command'}), 500
 
     # Generate the plot from the output file
-    output_file_path = os.path.join(local_dir, 'deconvolved.csv')
+    output_file_path = os.path.join(local_dir, 'deconvolved.tsv')
     if not os.path.exists(output_file_path):
         logging.error(f"Output file not found: {output_file_path}")
         return jsonify({'error': 'Output file not found'}), 500
