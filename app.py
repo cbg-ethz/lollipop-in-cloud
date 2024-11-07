@@ -100,7 +100,7 @@ def run_lollipop():
         'tallymut.tsv.zst': 'tallymut.tsv.zst',
         'variant_config.yaml': 'variant_config.yaml',
         'deconv_bootstrap_cowwid.yaml': 'deconv_bootstrap_cowwid.yaml',
-        'filters_badmut.yaml': 'filters_badmut.yaml'
+        'filters_badmut.yaml': 'filters_badmut.yaml',
     }
 
     # Download and decompress files from S3
@@ -110,7 +110,7 @@ def run_lollipop():
 
     # Verify that all files are downloaded
     for local_file in s3_files.keys():
-        local_path = os.path.join(local_dir, local_file.replace('.zst', ''))
+        local_path = os.path.join(local_dir, local_file)
         if not os.path.exists(local_path):
             logging.error(f"File not found: {local_path}")
         else:
@@ -118,7 +118,7 @@ def run_lollipop():
 
     # Run lollipop deconvolute command
     command = [
-        'lollipop', 'deconvolute', f'{local_dir}/tallymut.tsv',
+        'lollipop', 'deconvolute', f'{local_dir}/tallymut.tsv.zst',
         '--variants-config', f'{local_dir}/variant_config.yaml',
         '--variants-dates', yaml_path,
         '--deconv-config', f'{local_dir}/deconv_bootstrap_cowwid.yaml',
