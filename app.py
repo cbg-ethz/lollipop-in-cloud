@@ -1,15 +1,16 @@
+import subprocess
+import pandas as pd
+import boto3
+import uuid
+import logging
 from flask import Flask, request, jsonify
 import matplotlib.pyplot as plt
 import io
 import base64
 import os
 from dotenv import load_dotenv
-import subprocess
-import pandas as pd
-import boto3
-import uuid
-import logging
 import seaborn as sns
+import shutil
 
 # Load environment variables from .env file
 load_dotenv()
@@ -54,8 +55,9 @@ def generate_plot_from_csv(csv_path, location=''):
         subset = data[data['variant'] == variant]
         plt.fill_between(subset['date'], subset['proportionLower'], subset['proportionUpper'], alpha=0.3)
 
-    # Move the legend outside of the plot
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Variant')
+    # Move the legend below the plot
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3, title='Variant')
+    plt.tight_layout(rect=[0, 0.1, 1, 1])  # Adjust layout to make space for the legend
 
     # x-axis from 0 to 1 with sensible ticks
     plt.ylim(0, 1)
@@ -65,7 +67,7 @@ def generate_plot_from_csv(csv_path, location=''):
 
     # Add a title
     plt.title('Proportion of Variants Over Time')
-    # add subtitle the loaction variable
+    # add subtitle the location variable
     plt.suptitle(f"Location: {location}")
 
     # Save the plot to a BytesIO object
@@ -88,7 +90,7 @@ def run_lollipop():
     os.makedirs(local_dir, exist_ok=True)
 
     # Save the YAML data to a file
-    yaml_path = os.path.join(local_dir,'var_dates.yaml')
+    yaml_path = os.path.join(local_dir, 'var_dates.yaml')
     with open(yaml_path, 'w') as file:
         file.write(yaml_data)
 
@@ -98,37 +100,53 @@ def run_lollipop():
         'tallymut.tsv.zst': 'tallymut.tsv.zst',
         'variant_config.yaml': 'variant_config.yaml',
         'deconv_bootstrap_cowwid.yaml': 'deconv_bootstrap_cowwid.yaml',
-        'filters_badmut.yaml': 'filters_badmut.yaml',
-        'ww_locations.tsv': 'ww_locations.tsv'
+        'filters_badmut.yaml': 'filters_badmut.yaml'
     }
-    # Download files from S3
+
+    # Download and decompress files from S3
     for local_file, s3_key in s3_files.items():
         local_path = os.path.join(local_dir, local_file)
-        logging.info(f"Downloading {s3_key} to {local_path}...")
         download_from_s3(bucket_name, s3_key, local_path)
-        logging.info(f"Downloaded {s3_key} to {local_path}")
+
+    # Verify that all files are downloaded
+    for local_file in s3_files.keys():
+        local_path = os.path.join(local_dir, local_file.replace('.zst', ''))
+        if not os.path.exists(local_path):
+            logging.error(f"File not found: {local_path}")
+        else:
+            logging.info(f"File exists: {local_path}")
 
     # Run lollipop deconvolute command
-    location = data.get('location', '')
     command = [
-        'lollipop', 'deconvolute', f'{local_dir}/tallymut.tsv.zst',
+        'lollipop', 'deconvolute', f'{local_dir}/tallymut.tsv',
         '--variants-config', f'{local_dir}/variant_config.yaml',
         '--variants-dates', yaml_path,
         '--deconv-config', f'{local_dir}/deconv_bootstrap_cowwid.yaml',
         '--filters', f'{local_dir}/filters_badmut.yaml',
         '--seed=42',
-        '--n-cores=1',
-        f'--location={location}',
-        '--output', f'{local_dir}/deconvolved.tsv'
+        '--n-cores=1'
     ]
-    subprocess.run(command, check=True)
+    try:
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error running lollipop command: {e}")
+        return jsonify({'error': 'Error running lollipop command'}), 500
 
     # Generate the plot from the output file
-    output_file_path = os.path.join(local_dir, 'deconvolved.tsv')
-    plot_url = generate_plot_from_csv(output_file_path, location)
+    output_file_path = os.path.join(local_dir, 'deconvolved.csv')
+    if not os.path.exists(output_file_path):
+        logging.error(f"Output file not found: {output_file_path}")
+        return jsonify({'error': 'Output file not found'}), 500
+
+    plot_url = generate_plot_from_csv(output_file_path)
+
+    # Clean up the local directory
+    shutil.rmtree(local_dir)
 
     return jsonify({'plot_url': f'data:image/png;base64,{plot_url}'})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+    host = os.getenv('FLASK_RUN_HOST', '0.0.0.0')
+    port = int(os.getenv('FLASK_RUN_PORT', 8000))
+    app.run(host=host, port=port)
 
