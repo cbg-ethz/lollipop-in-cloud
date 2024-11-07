@@ -6,6 +6,8 @@ WORKDIR /app
 # Copy additional project files
 COPY requirements.txt ./
 COPY app.py ./
+COPY s3_utils.py ./
+COPY lollipop_utils.py ./
 COPY .env ./
 
 # Install additional Python dependencies
