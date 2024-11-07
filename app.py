@@ -70,7 +70,8 @@ def generate_plot_from_csv(csv_path, location=''):
 
     # Save the plot to a BytesIO object
     img = io.BytesIO()
-    plt.savefig(img, format='png')
+    plt.tight_layout(rect=[0, 0, 0.85, 1])  # Adjust layout to make space for the legend
+    plt.savefig(img, format='png', bbox_inches='tight')
     img.seek(0)
     plot_url = base64.b64encode(img.getvalue()).decode()
 
