@@ -71,4 +71,4 @@ The current deployment of this project can be accessed at [biohack24.g15n.net](h
 
 ### Configuration
 
-Ensure you have a `.env` file with the following content:
+Ensure you have a `.env` file, see `.env.example`.
